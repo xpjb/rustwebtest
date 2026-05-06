@@ -1,5 +1,7 @@
 # rustwebtest
 
+**Itch.io:** [https://skretble.itch.io/rust-web-demo](https://skretble.itch.io/rust-web-demo)
+
 Reference Rust → wasm32 app exercising:
 
 - **Rendering**: `wgpu` via `winit` (auto-targets WebGL2 / WebGPU on the web)
