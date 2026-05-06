@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Produce a zip for itch.io: HTML5 project → upload this file.
 # https://itch.io/docs/creators/html5 — index.html must be at the zip root.
-# Output defaults to pkg/rustwebtest-itch-YYYYMMDD.zip (under .gitignored pkg/).
+# Output defaults to pkg/rustwebtest-itch-YYYYMMDDTHHMMSSZ.zip (UTC, ISO-8601 basic; under .gitignored pkg/).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
-DATE="$(date +%Y%m%d)"
+DATE="$(date -u +"%Y%m%dT%H%M%SZ")"
 ZIP_NAME="${ZIP_NAME:-pkg/rustwebtest-itch-${DATE}.zip}"
 
 if [[ "${SKIP_BUILD:-0}" != "1" ]]; then

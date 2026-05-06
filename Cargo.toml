@@ -23,15 +23,15 @@ winit = "0.30"
 wgpu = "23"
 
 # audio
-rodio = { version = "0.20", default-features = false, features = [
-    "wasm-bindgen",
-    # `vorbis` uses lewton (dedicated Ogg/Vorbis decoder); symphonia's vorbis
-    # path was returning 0 audible samples on wasm.
-    "vorbis",
-] }
-# We pull in cpal explicitly only to ensure the wasm-bindgen feature is picked
-# up even if rodio's resolver doesn't activate it.
-cpal = { version = "0.15", features = ["wasm-bindgen"] }
+# cpal 0.17 has the `audioworklet` feature, which routes the audio callback
+# through an AudioWorkletProcessor running on a dedicated audio thread instead
+# of the main thread (the older `wasm-bindgen` path uses scheduled
+# AudioBufferSourceNodes and can stutter or drop callbacks on a busy main).
+cpal = { version = "0.17", features = ["audioworklet"] }
+# Direct Ogg/Vorbis decoder. We decode the BGM once at startup into a Vec<f32>
+# and stream from it in the audio callback — no per-callback decoder state to
+# share across threads.
+lewton = "0.10"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 env_logger = "0.11"
