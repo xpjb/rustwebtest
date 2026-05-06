@@ -1,0 +1,14 @@
+# Build flags required to enable wasm threads (atomics, shared memory).
+# These are picked up automatically when building for wasm32-unknown-unknown.
+
+[target.wasm32-unknown-unknown]
+rustflags = [
+    "-C", "target-feature=+atomics,+bulk-memory,+mutable-globals",
+]
+
+[unstable]
+build-std = ["panic_abort", "std"]
+
+[build]
+# Use these only when invoking cargo without --target. The build.sh script sets
+# the target explicitly.

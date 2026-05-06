@@ -1,0 +1,67 @@
+[package]
+name = "rustwebtest"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+log = "0.4"
+bytemuck = { version = "1", features = ["derive"] }
+glam = { version = "0.29", features = ["bytemuck"] }
+crossbeam-channel = "0.5"
+# wasm_thread is a drop-in for std::thread that uses Web Workers when targeting
+# wasm32 (and falls back to std::thread on native).
+wasm_thread = "0.3"
+fastrand = "2"
+# Tiny PNG decoder for unpacking the compile-time-bundled atlas at runtime.
+png = "0.18"
+
+# winit / wgpu
+winit = "0.30"
+wgpu = "23"
+
+# audio
+rodio = { version = "0.20", default-features = false, features = [
+    "wasm-bindgen",
+    # `vorbis` uses lewton (dedicated Ogg/Vorbis decoder); symphonia's vorbis
+    # path was returning 0 audible samples on wasm.
+    "vorbis",
+] }
+# We pull in cpal explicitly only to ensure the wasm-bindgen feature is picked
+# up even if rodio's resolver doesn't activate it.
+cpal = { version = "0.15", features = ["wasm-bindgen"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger = "0.11"
+pollster = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+console_log = "1"
+console_error_panic_hook = "0.1"
+js-sys = "0.3"
+getrandom = { version = "0.2", features = ["js"] }
+web-sys = { version = "0.3", features = [
+    "Document",
+    "Window",
+    "Element",
+    "HtmlCanvasElement",
+    "Performance",
+    "Navigator",
+    "AudioContext",
+] }
+
+[build-dependencies]
+image = { version = "0.25", default-features = false, features = ["png", "webp"] }
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+
+[profile.dev]
+opt-level = 1
