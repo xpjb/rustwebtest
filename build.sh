@@ -46,3 +46,4 @@ wasm-bindgen \
 echo
 echo "build OK -> pkg/"
 echo "now run:  ./serve.sh   (sets COOP/COEP for SharedArrayBuffer)"
+echo "itch.io:  ./package-itch.sh   (pkg/rustwebtest-itch-YYYYMMDD.zip)"

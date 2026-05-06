@@ -3,7 +3,8 @@
 //
 // On web, rodio's cpal backend needs the `wasm-bindgen` feature so it can
 // route through Web Audio. Browsers also forbid starting audio before a user
-// gesture; the page wires up a click handler that calls `try_init`.
+// gesture; `unlock_audio` from the tap-to-start overlay and canvas input
+// both call `try_init`.
 //
 // `OutputStream` (and the cpal Stream it wraps) is `!Send` on most backends,
 // so we keep audio state in a thread_local accessed only from the main thread.

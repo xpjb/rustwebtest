@@ -25,9 +25,20 @@ cargo +nightly build \
     -Z build-std=panic_abort,std \
     --release --lib
 
-wasm-bindgen --target web --out-dir pkg --out-name rustwebtest \
+wasm-bindgen --target web --split-linked-modules --out-dir pkg --out-name rustwebtest \
     target/wasm32-unknown-unknown/release/rustwebtest.wasm
 ```
+
+## Itch.io (HTML5)
+
+itch.io **does** send the COOP/COEP headers once you opt in — unlike GitHub Pages — so wasm threads work there.
+
+1. `./package-itch.sh` — runs `./build.sh`, then writes `pkg/rustwebtest-itch-YYYYMMDD.zip` (local date, same calendar day overwrites). Uses `7z` (`7z a -tzip`). Requires [7-Zip](https://www.7-zip.org/) on `PATH`. Override path with `ZIP_NAME=…`.
+2. On itch: **Edit game** → **Uploads** → upload the zip as an HTML5 project (or replace an existing HTML build).
+3. Set **This file will be played in the browser** to `index.html` if it is not picked automatically.
+4. In the project’s **Dangerous / advanced** (or embed) settings, enable **SharedArrayBuffer support**. Without this, the page is not `crossOriginIsolated` and workers will not start.
+
+Re-pack only (reuse current `pkg/`): `SKIP_BUILD=1 ./package-itch.sh`
 
 ## Run locally
 
@@ -49,6 +60,7 @@ Open <http://localhost:8080>.
 | [src/render.rs](src/render.rs) | wgpu sprite renderer + winit `ApplicationHandler` |
 | [src/lib.rs](src/lib.rs) | wasm-bindgen `start` entrypoint |
 | [index.html](index.html) | Host page that loads `pkg/rustwebtest.js` |
+| [package-itch.sh](package-itch.sh) | Build + zip for itch.io HTML5 upload |
 | [serve.mjs](serve.mjs) | Static server with COOP/COEP headers |
 
 ## Threading model
@@ -58,6 +70,3 @@ Open <http://localhost:8080>.
 - The main thread **never blocks** on `recv()` — it only `try_recv()`s, draining each channel down to the latest snapshot, and renders whatever it has.
 - Cross-partition overlap detection runs on the main thread against the merged snapshots; new overlaps trigger a synthesized pling.
 
-## Itch.io notes
-
-Upload the contents of this directory (after `./build.sh`) — `index.html`, `pkg/`, plus anything the page references. Enable the **"SharedArrayBuffer support"** option on the project page. itch.io then serves the COOP/COEP headers; without them, `crossOriginIsolated` is false and `web_thread::spawn` cannot create real workers.

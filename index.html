@@ -53,26 +53,28 @@
   <div id="gesture">click to start audio</div>
 
   <script type="module">
-    import init, * as wasm from "./pkg/rustwebtest.js";
+    import init, { unlockAudio } from "./pkg/rustwebtest.js";
 
     // wasm-bindgen with --target web requires SharedArrayBuffer to be
     // available for thread support. Verify cross-origin isolation up front.
     if (!window.crossOriginIsolated) {
       document.getElementById("overlay").innerHTML =
-        "WARNING: page is not crossOriginIsolated — threads will not work. " +
-        "Ensure the host serves COOP=same-origin and COEP=require-corp.";
+        "WARNING: not crossOriginIsolated — wasm threads will not work. " +
+        "Needs COOP=same-origin and COEP=require-corp (itch.io: enable SharedArrayBuffer in project embed settings; local: ./serve.sh).";
     }
 
     // Init the wasm module. The default import url resolves to the .wasm.
     await init();
 
-    // Hide the click-to-start prompt after the first interaction (the wasm
-    // module also catches the canvas click and initializes audio, but tapping
-    // anywhere on the page should work too).
+    // Fullscreen overlay is above the canvas: the first tap must unlock audio
+    // here (same user-activation stack); winit never sees that event.
     const gesture = document.getElementById("gesture");
-    const dismiss = () => gesture.classList.add("hidden");
-    document.addEventListener("click", dismiss, { once: true });
-    document.addEventListener("touchstart", dismiss, { once: true, passive: true });
+    const dismiss = () => {
+      unlockAudio();
+      gesture.classList.add("hidden");
+    };
+    gesture.addEventListener("click", dismiss, { once: true });
+    gesture.addEventListener("touchstart", dismiss, { once: true, passive: true });
   </script>
 </body>
 </html>

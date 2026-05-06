@@ -27,6 +27,15 @@ use wasm_bindgen::prelude::*;
 /// source ever changes.
 pub const BGM_OGG: &[u8] = include_bytes!("../assets/staticeulogy.ogg");
 
+/// Resume Web Audio inside the same synchronous user-gesture handler as the
+/// HTML tap-to-start overlay. That overlay sits above the canvas, so the first
+/// click never reaches winit and would otherwise not call `try_init`.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen(js_name = unlockAudio)]
+pub fn unlock_audio() {
+    crate::audio::try_init(BGM_OGG);
+}
+
 /// Wasm entrypoint. The `start` attribute tells wasm-bindgen to invoke this
 /// automatically once the module is instantiated.
 #[cfg(target_arch = "wasm32")]
