@@ -1,6 +1,11 @@
 // Audio: BGM via rodio + a synthesized exponentially-decaying pling for
 // overlap events.
 //
+// SFX uses one submix: [`rodio::dynamic_mixer`] sums all pling voices, fed by
+// a single [`Sink`] on the same [`OutputStreamHandle`] as BGM. That avoids a
+// fresh [`Sink`] + detach per event; overlap still adds in float (no automatic
+// limiting), so heavy polyphony may need a lower master SFX volume.
+//
 // On web, rodio's cpal backend needs the `wasm-bindgen` feature so it can
 // route through Web Audio. Browsers also forbid starting audio before a user
 // gesture; `unlock_audio` from the tap-to-start overlay and canvas input
@@ -11,17 +16,19 @@
 
 use std::cell::RefCell;
 use std::io::Cursor;
+use std::sync::Arc;
 use std::time::Duration;
 
-use rodio::source::Source;
-use rodio::{OutputStream, OutputStreamHandle, Sink};
+use rodio::source::{Source, Zero};
+use rodio::{dynamic_mixer, OutputStream, Sink};
 
 type BoxErr = Box<dyn std::error::Error + Send + Sync>;
 
 pub struct Audio {
     _stream: OutputStream,
-    handle: OutputStreamHandle,
     _bgm_sink: Sink,
+    _sfx_sink: Sink,
+    sfx_mix: Arc<dynamic_mixer::DynamicMixerController<f32>>,
 }
 
 impl Audio {
@@ -40,21 +47,23 @@ impl Audio {
         bgm_sink.set_volume(0.5);
         bgm_sink.play();
 
+        let (sfx_mix, sfx_mix_out) = dynamic_mixer::mixer(1, 44_100);
+        sfx_mix.add(Zero::<f32>::new(1, 44_100));
+        let sfx_sink = Sink::try_new(&handle)?;
+        sfx_sink.append(sfx_mix_out);
+        sfx_sink.set_volume(0.08);
+        sfx_sink.play();
+
         Ok(Audio {
             _stream,
-            handle,
             _bgm_sink: bgm_sink,
+            _sfx_sink: sfx_sink,
+            sfx_mix,
         })
     }
 
     pub fn pling(&self, freq: f32) {
-        let sink = match Sink::try_new(&self.handle) {
-            Ok(s) => s,
-            Err(_) => return,
-        };
-        sink.set_volume(0.08);
-        sink.append(Pling::new(freq, 0.25));
-        sink.detach();
+        self.sfx_mix.add(Pling::new(freq, 0.25));
     }
 }
 
